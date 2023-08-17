@@ -36,22 +36,28 @@ class authController {
     }
     async login(req, res) {
         try {
-            const {username, password} = req.body
-            const user = await User.findOne({username})
+            const { username, password } = req.body;
+            const user = await User.findOne({ username });
             if (!user) {
-                return res.status(400).json({message: `Пользователь ${username} не найден`})
+                return res.status(400).json({ message: `Пользователь ${username} не найден` });
             }
-            const validPassport = bcrypt.compareSync(password, user.password)
+            const validPassport = bcrypt.compareSync(password, user.password);
             if (!validPassport) {
-                return res.status(400).json({message: 'Введен неверный пароль'})
+                return res.status(400).json({ message: 'Введен неверный пароль' });
             }
-            const token = generateAccessToken(user._id, user.roles)
-            return res.json({token})
-        } catch (e){
-            console.log(e)
-            res.status(400).json({message: 'Login error'})
+    
+            // Обновляем дату последней активности
+            user.lastActiveAt = new Date();
+            await user.save(); // Сохраняем обновленную запись пользователя
+    
+            const token = generateAccessToken(user._id, user.roles);
+            return res.json({ token });
+        } catch (e) {
+            console.log(e);
+            res.status(400).json({ message: 'Login error' });
         }
     }
+    
     async getUsers(req, res) {
         try {
             const users = await User.find()
