@@ -18,14 +18,15 @@ class authController {
             if(!errors.isEmpty()){
                 return res.status(400).json({message:"Ошибка при регистрации", errors})
             }
-            const {username, password} = req.body
+            const {username, email, password} = req.body
             const candidate = await User.findOne({username})
             if (candidate) {
                 return res.status(400).json({message: 'Пользователь с таким именем уже существует'})
             }
             const hashPassword = bcrypt.hashSync(password, 7);
             const userRole = await Role.findOne({value: 'USER'})
-            const user = new User({username, password: hashPassword, roles: [userRole.value]})
+            const user = new User({username, email, password: hashPassword, roles: [userRole.value], registeredAt: new Date()})
+            
             await user.save()
             return res.json({message: 'Пользователь успешно зарегистрирован'})
         } catch (e){
@@ -56,7 +57,18 @@ class authController {
             const users = await User.find()
             res.json(users)
         } catch (e){
-
+            console.log(e)
+        }
+    }
+    async deleteUser(req, res) {
+        try {
+            const { userId } = req.params;
+            await User.findByIdAndDelete(userId);
+            
+            return res.json({ message: 'Пользователь успешно удален' });
+        } catch (e) {
+            console.log(e);
+            res.status(500).json({ message: 'Ошибка при удалении пользователя' });
         }
     }
 }

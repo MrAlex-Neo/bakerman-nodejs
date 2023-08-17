@@ -7,9 +7,11 @@ const roleMiddleware = require('./middleware/roleMiddleware')
 
 router.post('/registration',[
     check('username', 'Имя пользователя не может быть пустым').notEmpty(),
-    check('password', 'Пароль не должен быть больше 4 и меньше 10 символов').isLength({min:4, max: 10})
+    check('password', 'Пароль не должен быть больше 4 и меньше 10 символов').isLength({min:4, max: 10}),
+    check('email', 'Некорректный email').isEmail()
 ], controller.registration)
 router.post('/login', controller.login)
-router.get('/users', roleMiddleware(['ADMIN']), controller.getUsers)
+router.get('/users', roleMiddleware(['ADMIN', 'USER']), controller.getUsers)
+router.delete('/users/:userId', roleMiddleware(['ADMIN', 'USER']), controller.deleteUser);
 
 module.exports = router
