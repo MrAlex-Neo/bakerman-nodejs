@@ -24,7 +24,7 @@ class authController {
                 return res.status(400).json({message: 'Пользователь с таким именем уже существует'})
             }
             const hashPassword = bcrypt.hashSync(password, 7);
-            const userRole = await Role.findOne({value: 'USER'})
+            const userRole = await Role.findOne({value: 'UNBLOCK'})
             const user = new User({username, email, password: hashPassword, roles: [userRole.value], registeredAt: new Date()})
             
             await user.save()
@@ -45,7 +45,11 @@ class authController {
             if (!validPassport) {
                 return res.status(400).json({ message: 'Введен неверный пароль' });
             }
-    
+            // const userRole = await Role.findOne({value: 'UNBLOCK'})
+            // console.log(userRole)
+            // if(userRole !== true){
+            //     return res.status(400).json({ message: 'block user' });
+            // }
             // Обновляем дату последней активности
             user.lastActiveAt = new Date();
             await user.save(); // Сохраняем обновленную запись пользователя
@@ -55,6 +59,35 @@ class authController {
         } catch (e) {
             console.log(e);
             res.status(400).json({ message: 'Login error' });
+        }
+    }
+    
+    async changeState(req, res) {
+        try {
+            const { userId } = req.params;
+            
+            const user = await User.findById(userId);
+            if (!user) {
+                return res.status(404).json({ message: 'Пользователь не найден' });
+            }
+            
+            let newRoles;
+            if (user.roles.includes('BLOCK')) {
+                newRoles = ['UNBLOCK'];
+            } else if (user.roles.includes('UNBLOCK')) {
+                newRoles = ['BLOCK'];
+            } else {
+                return res.status(404).json({ message: 'State user undefined' });
+            }
+            
+            // const updatedUser = await User.findByIdAndUpdate(userId, { roles: newRoles }, { new: true });
+            await User.findByIdAndUpdate(userId, { roles: newRoles }, { new: true });
+            
+            console.log('User updated');
+            return res.json({ message: 'User updated' });
+        } catch (e) {
+            console.log(e);
+            res.status(500).json({ message: 'Ошибка при изменении состояния пользователя' });
         }
     }
     
@@ -75,6 +108,24 @@ class authController {
         } catch (e) {
             console.log(e);
             res.status(500).json({ message: 'Ошибка при удалении пользователя' });
+        }
+    }
+    async getUserIdByToken(req, res) {
+        try {
+            let token = req.header('Authorization');
+            if (!token) {
+                return res.status(401).json({ message: 'Токен отсутствует' });
+            }
+            token = token.substring("Bearer ".length)
+            const decodedToken = jwt.verify(token, secret);
+            const userId = decodedToken.id;
+            if (!userId) {
+                return res.status(401).json({ message: 'Недействительный токен' });
+            }
+            return res.json({ userId });
+        } catch (e) {
+            console.error(e);
+            res.status(500).json({ message: 'Ошибка при получении id пользователя' });
         }
     }
 }
