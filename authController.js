@@ -45,11 +45,6 @@ class authController {
             if (!validPassport) {
                 return res.status(400).json({ message: 'Введен неверный пароль' });
             }
-            // const userRole = await Role.findOne({value: 'UNBLOCK'})
-            // console.log(userRole)
-            // if(userRole !== true){
-            //     return res.status(400).json({ message: 'block user' });
-            // }
             // Обновляем дату последней активности
             user.lastActiveAt = new Date();
             await user.save(); // Сохраняем обновленную запись пользователя
@@ -70,7 +65,6 @@ class authController {
             if (!user) {
                 return res.status(404).json({ message: 'Пользователь не найден' });
             }
-            
             let newRoles;
             if (user.roles.includes('BLOCK')) {
                 newRoles = ['UNBLOCK'];
@@ -79,11 +73,7 @@ class authController {
             } else {
                 return res.status(404).json({ message: 'State user undefined' });
             }
-            
-            // const updatedUser = await User.findByIdAndUpdate(userId, { roles: newRoles }, { new: true });
             await User.findByIdAndUpdate(userId, { roles: newRoles }, { new: true });
-            
-            console.log('User updated');
             return res.json({ message: 'User updated' });
         } catch (e) {
             console.log(e);
